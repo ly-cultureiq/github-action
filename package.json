@@ -25,7 +25,7 @@
   "dependencies": {
     "@actions/core": "file:toolkit/actions-core-0.0.0.tgz",
     "@actions/exec": "file:toolkit/actions-exec-0.0.0.tgz",
-    "coveralls": "git+https://github.com/ly-cultureiq/node-coveralls.git#593d1be7855993f0ec4c34fbf8e7f2673304edd5",
+    "coveralls": "git+https://github.com/cultureiq/node-coveralls.git#593d1be7855993f0ec4c34fbf8e7f2673304edd5",
     "request": "^2.88.0"
   }
 }
