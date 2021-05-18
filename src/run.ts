@@ -1,7 +1,9 @@
 import * as core from '@actions/core';
 
-const fs = require('fs');
-const request = require('request');
+import fs from 'fs';
+import path from 'path';
+import request, { Response } from 'request';
+import { adjustLcovBasePath } from './lcov-processor';
 
 const coveralls = require('coveralls');
 
@@ -24,45 +26,39 @@ export async function run() {
     process.env.COVERALLS_SERVICE_NAME = 'github';
     process.env.COVERALLS_GIT_COMMIT = process.env.GITHUB_SHA!.toString();
     process.env.COVERALLS_GIT_BRANCH = process.env.GITHUB_REF!.toString();
+    process.env.COVERALLS_FLAG_NAME = process.env.COVERALLS_FLAG_NAME || core.getInput('flag-name');
 
-    const event = fs.readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8');
+    const event = fs.readFileSync(process.env.GITHUB_EVENT_PATH!, 'utf8');
 
     if (process.env.COVERALLS_DEBUG) {
       console.log("Event Name: " + process.env.GITHUB_EVENT_NAME);
       console.log(event);
     }
 
-    const sha = process.env.GITHUB_SHA!.toString();
-
-    let jobId;
-
     if (process.env.GITHUB_EVENT_NAME == 'pull_request') {
-      const pr = JSON.parse(event).number;
-      process.env.CI_PULL_REQUEST = pr;
-      jobId = `${sha}-PR-${pr}`;
-    } else {
-      jobId = sha;
+      process.env.CI_PULL_REQUEST = JSON.parse(event).number;
     }
-
-    process.env.COVERALLS_SERVICE_JOB_ID = jobId
 
     const endpoint = core.getInput('coveralls-endpoint');
     if (endpoint != '') {
       process.env.COVERALLS_ENDPOINT = endpoint;
     }
 
+    const runId = process.env.GITHUB_RUN_ID;
+    process.env.COVERALLS_SERVICE_JOB_ID = runId;
+
     if(core.getInput('parallel-finished') != '') {
       const payload = {
         "repo_token": githubToken,
         "repo_name": process.env.GITHUB_REPOSITORY,
-        "payload": { "build_num": jobId, "status": "done" }
+        "payload": { "build_num": runId, "status": "done" }
       };
 
       request.post({
         url: `${process.env.COVERALLS_ENDPOINT || 'https://coveralls.io'}/webhook`,
         body: payload,
         json: true
-      }, (error: string, response: string, data: WebhookResult) => {
+      }, (error: string, _response: Response, data: WebhookResult) => {
           if (error) {
             throw new Error(error);
           }
@@ -106,7 +102,11 @@ export async function run() {
       throw new Error(`${filetype} file not found.`);
     }
 
-    coveralls.handleInput(file, (err: string, body: string) => {
+
+    const basePath = core.getInput('base-path');
+    const adjustedFile = basePath ? adjustLcovBasePath(file, basePath) : file;
+
+    coveralls.handleInput(adjustedFile, (err: string, body: string) => {
       if(err){
         core.setFailed(err);
       } else {

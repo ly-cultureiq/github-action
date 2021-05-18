@@ -17,6 +17,9 @@ inputs:
     description: ' Coverage type. Acccepted values are `lcov` and `cobertura`. Defaults to `lcov`'
     required: true
     default: 'lcov'
+  flag-name:
+    description: 'Job flag name, e.g. "Unit", "Functional", or "Integration". Will be shown in the Coveralls UI.'
+    required: false
   parallel:
     description: 'Set to true if you are running parallel jobs, then use "parallel_finished: true" for the last action.'
     required: false
@@ -27,6 +30,9 @@ inputs:
     description: 'Coveralls Enterprise server (more info: https://enterprise.coveralls.io)'
     required: false
     default: 'https://coveralls.io'
+  base-path:
+    description: 'The root folder of the project that originally ran the tests'
+    required: false
 outputs:
   coveralls-api-result:
     description: 'Result status of Coveralls API post.'
